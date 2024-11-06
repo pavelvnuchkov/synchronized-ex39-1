@@ -5,24 +5,50 @@ public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) {
-        ExecutorService pool = Executors.newFixedThreadPool(4);
-        List<Future> threadList = new ArrayList<>();
+        List<Thread> threadList = new ArrayList<>();
+
+        Thread thread = new Thread(() -> {
+            while (!Thread.interrupted()) {
+                synchronized (sizeToFreq) {
+                    try {
+                        sizeToFreq.wait();
+                    } catch (InterruptedException e) {
+                        System.out.println("Программа завершила свою работу!");
+                        break;
+                    }
+                    int keyMaxValue = 0;
+                    int maxValue = 0;
+                    for (Integer key : sizeToFreq.keySet()) {
+                        if (maxValue < sizeToFreq.get(key)) {
+                            maxValue = sizeToFreq.get(key);
+                            keyMaxValue = key;
+                        }
+                    }
+                    System.out.println("Частота - " + keyMaxValue + " Максимум - " + sizeToFreq.get(keyMaxValue));
+
+                }
+            }
+        });
+        thread.start();
         for (int i = 0; i < 1000; i++) {
-            threadList.add(pool.submit(() -> {
+            Thread threadCounter = new Thread(() -> {
                 countCommand(generateRoute("RLRFR", 100));
-            }));
+            });
+            threadCounter.start();
+            threadList.add(threadCounter);
         }
-        for (Future future : threadList) {
+
+
+        for (Thread threads : threadList) {
             try {
-                future.get();
+                threads.join();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
                 throw new RuntimeException(e);
             }
         }
+
         printMap();
-        pool.shutdown();
+        thread.interrupt();
     }
 
     public static void countCommand(String route) {
@@ -38,6 +64,7 @@ public class Main {
             } else {
                 sizeToFreq.put(count, 1);
             }
+            sizeToFreq.notify();
         }
     }
 
@@ -51,15 +78,22 @@ public class Main {
     }
 
     public static void printMap() {
-
-        List<Map.Entry<Integer, Integer>> list = new ArrayList<>(sizeToFreq.entrySet());
-        Collections.sort(list, Comparator.comparing(Map.Entry::getValue));
-
-        System.out.println("Самое частое количество повторений " + list.get(list.size() - 1).getKey() +
-                " (встретилось " + list.get(list.size() - 1).getValue() + " раз)");
+        int keyMaxValue = 0;
+        int maxValue = 0;
+        for (Integer key : sizeToFreq.keySet()) {
+            if (maxValue < sizeToFreq.get(key)) {
+                maxValue = sizeToFreq.get(key);
+                keyMaxValue = key;
+            }
+        }
+        System.out.println("Самое частое количество повторений " + keyMaxValue +
+                " (встретилось " + sizeToFreq.get(keyMaxValue) + " раз)");
         System.out.println("Другие размеры:");
-        for (int i = 0; i < list.size() - 1; i++) {
-            System.out.println(" - " + list.get(i).getKey() + " (" + list.get(i).getValue() + ") раз");
+        for (Integer key : sizeToFreq.keySet()) {
+            if (key != keyMaxValue) {
+                System.out.println(" - " + key + " (" + sizeToFreq.get(key) + ") раз");
+            }
         }
     }
+
 }
