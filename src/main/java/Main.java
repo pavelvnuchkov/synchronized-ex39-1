@@ -50,16 +50,22 @@ public class Main {
         return route.toString();
     }
 
-    public static void printMap() {
-
-        List<Map.Entry<Integer, Integer>> list = new ArrayList<>(sizeToFreq.entrySet());
-        Collections.sort(list, Comparator.comparing(Map.Entry::getValue));
-
-        System.out.println("Самое частое количество повторений " + list.get(list.size() - 1).getKey() +
-                " (встретилось " + list.get(list.size() - 1).getValue() + " раз)");
+    public static void printMap () {
+        int keyMaxValue = 0;
+        int maxValue = 0;
+        for (Integer key : sizeToFreq.keySet()) {
+            if (maxValue < sizeToFreq.get(key)) {
+                maxValue = sizeToFreq.get(key);
+                keyMaxValue = key;
+            }
+        }
+        System.out.println("Самое частое количество повторений " + keyMaxValue +
+                " (встретилось " + sizeToFreq.get(keyMaxValue) + " раз)");
         System.out.println("Другие размеры:");
-        for (int i = 0; i < list.size() - 1; i++) {
-            System.out.println(" - " + list.get(i).getKey() + " (" + list.get(i).getValue() + ") раз");
+        for (Integer key : sizeToFreq.keySet()) {
+            if (key != keyMaxValue) {
+                System.out.println(" - " + key + " (" + sizeToFreq.get(key) + ") раз");
+            }
         }
     }
 }
